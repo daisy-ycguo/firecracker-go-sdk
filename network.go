@@ -166,6 +166,10 @@ func (networkInterfaces NetworkInterfaces) setupNetwork(
 	return nil, cleanupFuncs
 }
 
+func (networkInterfaces NetworkInterfaces) CniInterface() *NetworkInterface {
+	return networkInterfaces.cniInterface()
+}
+
 // return the network interface that has CNI configuration, or nil if there is no such interface
 func (networkInterfaces NetworkInterfaces) cniInterface() *NetworkInterface {
 	// Validation that there is at most one CNI interface is done as part of the

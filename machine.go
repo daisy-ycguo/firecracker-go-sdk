@@ -351,6 +351,7 @@ func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) 
 
 		m.logger = log.NewEntry(logger)
 	}
+	m.logger.Debug("Called NewMachine, Record timestamp!!!")
 
 	if m.client == nil {
 		m.client = NewClient(cfg.SocketPath, m.logger, false)
@@ -374,6 +375,12 @@ func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) 
 	}
 
 	m.logger.Debug("Called NewMachine()")
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	//m.logger.Debug("Called NewMachine()")
+	m.logger.Debug("End of NewMachine(), Record timestamp!!!")
 	return m, nil
 }
 
@@ -386,7 +393,7 @@ func NewMachine(ctx context.Context, cfg Config, opts ...Opt) (*Machine, error) 
 // Start may only be called once per Machine.  Subsequent calls will return
 // ErrAlreadyStarted.
 func (m *Machine) Start(ctx context.Context) error {
-	m.logger.Debug("Called Machine.Start()")
+	m.logger.Debug("Called Machine.Start(), Record timestamp!!!")
 	alreadyStarted := true
 	m.startOnce.Do(func() {
 		m.logger.Debug("Marking Machine as Started")
@@ -412,6 +419,7 @@ func (m *Machine) Start(ctx context.Context) error {
 	}
 
 	err = m.startInstance(ctx)
+	m.logger.Debug("End of Machine.Start(), Record timestamp!!!")
 	return err
 }
 
@@ -425,17 +433,39 @@ func (m *Machine) Shutdown(ctx context.Context) error {
 // call concurrently, and will deliver the same error to all callers, subject to
 // each caller's context cancellation.
 func (m *Machine) Wait(ctx context.Context) error {
+	m.logger.Info("Called Machine.Wait(), Record timestamp!!!")
 	select {
 	case <-ctx.Done():
+		m.logger.Info("End of Machine.Wait(), Record timestamp!!!")
 		return ctx.Err()
 	case <-m.exitCh:
+		m.logger.Info("End of Machine.Wait(), Record timestamp!!!")
 		return m.fatalErr
 	}
 }
 
+// GetFirecrackerVersion gets the machine's firecracker version and returns it
+// func (m *Machine) GetFirecrackerVersion(ctx context.Context) (string, error) {
+// 	resp, err := m.client.GetFirecrackerVersion(ctx)
+// 	if err != nil {
+// 		m.logger.Errorf("Getting firecracker version: %s", err)
+// 		return "", err
+// 	}
+
+// 	m.logger.Debug("GetFirecrackerVersion successful")
+// 	return *resp.Payload.FirecrackerVersion, nil
+// }
+
+func (m *Machine) SetupNetwork(ctx context.Context) error {
+	m.logger.Debug("Called Machine.SetupNetwork(), Record timestamp!!!")
+	return m.setupNetwork(ctx)
+}
+
 func (m *Machine) setupNetwork(ctx context.Context) error {
+	m.logger.Debug("into go-sdk setupNetwork")
 	err, cleanupFuncs := m.Cfg.NetworkInterfaces.setupNetwork(ctx, m.Cfg.VMID, m.Cfg.NetNS, m.logger)
 	m.cleanupFuncs = append(m.cleanupFuncs, cleanupFuncs...)
+	m.logger.Debug("out of go-sdk setupNetwork")
 	return err
 }
 
@@ -1088,7 +1118,7 @@ func (m *Machine) CreateSnapshot(ctx context.Context, memFilePath, snapshotPath 
 // CreateBalloon creates a balloon device if one does not exist
 func (m *Machine) CreateBalloon(ctx context.Context, amountMib int64, deflateOnOom bool, statsPollingIntervals int64, opts ...PutBalloonOpt) error {
 	balloon := models.Balloon{
-		AmountMib:              &amountMib,
+		AmountMib:             &amountMib,
 		DeflateOnOom:          &deflateOnOom,
 		StatsPollingIntervals: statsPollingIntervals,
 	}
